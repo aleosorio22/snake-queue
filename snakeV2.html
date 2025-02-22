@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game with Queue</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="snakeCanvas" width="400" height="400"></canvas>
+    <script>
+        class Queue {
+            constructor() {
+                this.items = [];
+            }
+
+            enqueue(element) {
+                this.items.push(element); // Agrega al final (FIFO)
+            }
+
+            dequeue() {
+                return this.items.shift(); // Elimina del frente (FIFO)
+            }
+
+            front() {
+                return this.items[0]; // Retorna la cabeza de la serpiente
+            }
+
+            size() {
+                return this.items.length;
+            }
+
+            contains(position) {
+                return this.items.some(segment => segment.x === position.x && segment.y === position.y);
+            }
+
+            getAll() {
+                return this.items; // Retorna todos los elementos
+            }
+        }
+
+        const canvas = document.getElementById('snakeCanvas');
+        const ctx = canvas.getContext('2d');
+        const box = 20;
+
+        let snake = new Queue();
+        snake.enqueue({ x: 9 * box, y: 9 * box });
+
+        let direction = 'RIGHT';
+        let food = {
+            x: Math.floor(Math.random() * 20) * box,
+            y: Math.floor(Math.random() * 20) * box
+        };
+
+        document.addEventListener('keydown', directionControl);
+
+        function directionControl(event) {
+            if (event.keyCode === 37 && direction !== 'RIGHT') direction = 'LEFT';
+            if (event.keyCode === 38 && direction !== 'DOWN') direction = 'UP';
+            if (event.keyCode === 39 && direction !== 'LEFT') direction = 'RIGHT';
+            if (event.keyCode === 40 && direction !== 'UP') direction = 'DOWN';
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar la serpiente
+            snake.getAll().forEach((segment, i) => {
+                ctx.fillStyle = (i === snake.size() - 1) ? 'green' : 'lightgreen';
+                ctx.fillRect(segment.x, segment.y, box, box);
+                ctx.strokeStyle = 'darkgreen';
+                ctx.strokeRect(segment.x, segment.y, box, box);
+            });
+
+            // Dibujar la comida
+            ctx.fillStyle = 'red';
+            ctx.fillRect(food.x, food.y, box, box);
+
+            // Obtener la cabeza actual
+            let head = snake.front();
+            let newHead = { x: head.x, y: head.y };
+
+            // Calcular nueva posición
+            if (direction === 'LEFT') newHead.x -= box;
+            if (direction === 'UP') newHead.y -= box;
+            if (direction === 'RIGHT') newHead.x += box;
+            if (direction === 'DOWN') newHead.y += box;
+
+            // Verificar colisión con los bordes o consigo misma
+            if (
+                newHead.x < 0 || newHead.y < 0 || 
+                newHead.x >= canvas.width || newHead.y >= canvas.height || 
+                snake.contains(newHead)
+            ) {
+                clearInterval(game);
+                alert('Game Over!');
+                return;
+            }
+
+            // Comer la comida
+            if (newHead.x === food.x && newHead.y === food.y) {
+                food = {
+                    x: Math.floor(Math.random() * 20) * box,
+                    y: Math.floor(Math.random() * 20) * box
+                };
+            } else {
+                snake.dequeue(); // Eliminar la cola solo si no comió
+            }
+
+            snake.enqueue(newHead); // Agregar la nueva cabeza al final
+
+            // Mostrar puntaje
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText('Score: ' + (snake.size() - 1), 10, 20);
+        }
+
+        let game = setInterval(draw, 100);
+    </script>
+</body>
+</html>
